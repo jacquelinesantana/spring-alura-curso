@@ -684,3 +684,26 @@ Ainda podemos controlar a quantidade de registros que iremos entregar para o con
    ```
 
     ainda podemos ordenar de forma decrescente usando o complemento para o atributo que é ,desc
+
+Também podemos deixar alguns parâmetros como default para a nossa aplicação, com a anotação @PageableDefault:
+
+```
+@GetMapping("dados-medico")
+public Page<DadosListagemMedico> listar(@PageableDefault(size = 5, sort = {"nome"}) Pageable paginacao){
+//aqui temos o size = 5 e o sort = nome por default
+    //o retorno faz um map para trazer os dados do DTO DadosListagemMedico
+    //Aqui ajustamos o método para retornar um Page com a paginação
+    //para o return a gente incluiu a paginação no medoto findAll e deixamos o metodo menor pq não é mais necessário converter para lista
+    return medicoRepository.findAll(paginacao).map(DadosListagemMedico::new);
+    //
+}
+```
+
+Uma alteração que talvez possa te ajudar a entender a sua api é a de exibir as consultar (Querys) no console, para isso vamos adicionar mais parâmetros no arquivo aplication.properties
+
+```
+spring.jpa.show-sql = true
+spring.jpa.properties.hibernate.format_sql = true
+```
+
+A primeira linha exibe o query no console e a segunda cria uma formatação para esse query para facilitar a sua leitura.

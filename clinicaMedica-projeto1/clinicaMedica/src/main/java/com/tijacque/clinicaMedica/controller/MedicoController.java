@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,7 +44,7 @@ public class MedicoController {
     }
 
     @GetMapping("dados-medico")
-    public Page<DadosListagemMedico> listar(Pageable paginacao){
+    public Page<DadosListagemMedico> listar(@PageableDefault(size = 5, sort = {"nome"}) Pageable paginacao){
         //o retorno faz um map para trazer os dados do DTO DadosListagemMedico
         //Aqui ajustamos o método para retornar um Page com a paginação
         //para o return a gente incluiu a paginação no medoto findAll e deixamos o metodo menor pq não é mais necessário converter para lista
