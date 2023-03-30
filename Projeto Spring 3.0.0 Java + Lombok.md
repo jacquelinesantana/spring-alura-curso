@@ -187,6 +187,24 @@ Objeto Json da requisição acima:
 
 O Record é um recurso que permite representar uma classe imutável,  com atributos, construtor e métodos de leitura, de maneira simples.
 
+O DTO vai ter alguns papéis importantes em um projeto, já que pode evitar que um parâmetro seja passado, de forma mal intencionada pelo consumidor da api. Exemplo: 
+
+*Uma api tem níveis de acesso e foi definido pelo dev backend que o atributo admin informe true para usuários com nível de acesso Administradore, ou false para os usuários comuns. Para isso foi criada a Model dos usuários com o atributo admin = false. Na controller por não ter uso de um DTO o usuário vai afetar diretamente esses atributos do usuário e pode intencionalmente ou não, fazer a seguinte requisição:*
+
+requisição tipo: POST
+
+```graphql
+{
+    “nome” : “Jacqueline”,
+    “email” : “email@email.com”,
+    “admin” : true
+}
+```
+
+
+
+*Se não tivermos a proteção devida a api, pode sim simplesmente persistir no banco esse usuário já com o atributo admin setado como true, e esse usuário ter poderes de um administrador nesse sistema.*
+
 Documentação oficial: https://docs.oracle.com/en/java/javase/16/language/records.html
 
 Aqui vamos realizar alguns ajustes para passar nossos dados de forma mais assertiva no projeto 
@@ -230,12 +248,12 @@ public enum Especialidade{
 }
 ```
 
-4. agora vamos ajustar o Endereço que também estará acusando erro, criando um novo Record para o mesmo dentro do pacote endereco.
+4. agora vamos ajustar o Endereço que também estará acusando erro, criando um novo Record para o mesmo dentro do pacote endereço.
    1. clique no nome da classe que esta com erro
    2. alt + ENTER
    3. escolher a opção Create Record
-   4. trocar o nome do pacote para endereco
-   5. dentro do Record vamos incluir os dados do endereco
+   4. trocar o nome do pacote para endereço
+   5. dentro do Record vamos incluir os dados do endereço
 
 ```
 public record DadosEndereco(String logradouro, String bairro, String cep, String cidade, String uf, String complemento, String numero){
@@ -264,7 +282,7 @@ Exemplo do Json enviado:
 
 Para persistir os dados em banco de dados, precisamos incluir as devidas dependências. Podemos ainda utilizar do **Spring Initializr** para esse apoio evitando digitar incorretamente os dados.
 
-As dependencias necessárias são as seguintes:
+As dependências necessárias são as seguintes:
 
 - Validation (I/O)  - para validar os dados formato de dados
 - Mysql Driver (SQL) - dar apoio para o banco de dados
@@ -418,7 +436,7 @@ public void cadastrarMed(@RequestBody DadosCadastroMedico dados){
 }
 ```
 
-> Atenção crie os contrutores para a classe Medico e Endereço
+> Atenção crie os construtores para a classe Medico e Endereço
 >
 > model de médicos - método construtor
 
@@ -699,7 +717,7 @@ public Page<DadosListagemMedico> listar(@PageableDefault(size = 5, sort = {"nome
 }
 ```
 
-Uma alteração que talvez possa te ajudar a entender a sua api é a de exibir as consultar (Querys) no console, para isso vamos adicionar mais parâmetros no arquivo aplication.properties
+Uma alteração que talvez possa te ajudar a entender a sua api é a de exibir as consultar (Querys) no console, para isso vamos adicionar mais parâmetros no arquivo application.properties
 
 ```
 spring.jpa.show-sql = true
@@ -707,3 +725,86 @@ spring.jpa.properties.hibernate.format_sql = true
 ```
 
 A primeira linha exibe o query no console e a segunda cria uma formatação para esse query para facilitar a sua leitura.
+
+Ainda podemos traduzir essas propriedades a serem passadas para a paginação incluindo mais 3 linhas no arquivo application.properties, seguem então as linhas:
+
+```ini
+spring.data.web.pageable.page-parameter=pagina
+spring.data.web.pageable.size-parameter=tamanho
+spring.data.web.sort.sort-parameter=ordem
+```
+
+Uma vez feita essa alteração a consulta fica:
+
+```bash
+http://localhost:8080/medicos?tamanho=5&pagina=1&ordem=email,desc
+```
+
+## Atualizar dados do médico
+
+Para colocar em prática esse processo precisaremos ajustar as classes: MedicoController, model do Médico, DTO DadosListagemMedico e o Dados endereço. Com essas alterações teremos métodos construtores e outros para entregar e realizar as ações necessárias para a atualização dos dados mantendo a integridade dos mesmos.
+
+Nesse momento, vamos criar o DTO responsável por definir os campos que podem ser atualizados removendo a obrigatoriedade de se informar todos os dados para atualizar, já que podemos ter a necessidade de passar apenas algumas informações para atualização, sem perder os "campos" que não demandam a necessidade de atualização. Note no código a seguir que o único atributo obrigatório será o ID.
+
+### DTO DadosAtualizaMedico
+
+```
+package com.tijacque.clinicaMedica.medico;
+
+import com.tijacque.clinicaMedica.model.DadosEndereco;
+import jakarta.validation.constraints.NotNull;
+
+public record DadosAtualizaMedico(
+        @NotNull
+        Long id,
+        String nome,
+        String telefone,
+        DadosEndereco endereco
+
+) {
+
+}
+```
+
+Vamos fazer é adicionar o ID na listagem dos dados dos médicos, isso será na classe DadosListagemMedico - DTO que retornar os dados dos médicos precisa de ID, para conseguirmos informar o id da linha que deve ser afetada no update.
+
+Note no código a seguir que incluímos o ID dentro da Record como um dado Long, seguindo a configuração do dado na Model. Esse atributo também esta dentro do construtor(medico.getId), para permitir trazer esse dado da Model Medico.
+
+### Mudança da DTO DadosListagemMedico
+
+```
+package com.tijacque.clinicaMedica.medico;
+
+import com.tijacque.clinicaMedica.model.Medico;
+
+public record DadosListagemMedico(
+        Long id,
+        String nome,
+        String email,
+        String crm,
+        Especialidade especialidade
+) {
+    public DadosListagemMedico(Medico medico){
+        //método construtor para permitir consumo dos dados na controller
+        this(medico.getId(), medico.getNome(), medico.getEmail(), medico.getCrm(), medico.getEspecialidade());
+    }
+}
+```
+
+Para a classe record DadosEndereço teremos que adicionar também um método atualizarInformacoes, que vai permitir preencher apenas os dados os quais queremos atualizar do endereço, sem ter a necessidade de passar todos os dados para essa ação.
+
+### Alteração para a DTO DadosEndereço
+
+O código a ser adicionado será:
+
+```
+public void atualizarInformacoes(DadosEndereco dados) {
+    if(dados.logradouro != null) this.logradouro = dados.logradouro;
+    if(dados.numero != null) this.numero = dados.numero;
+    if(dados.complemento != null) this.complemento = dados.complemento;
+    if(dados.bairro != null) this.bairro = dados.bairro;
+    if(dados.cidade != null) this.cidade = dados.cidade;
+    if(dados.uf != null) this.uf = dados.uf;
+    if(dados.cep != null) this.cep = dados.cep;
+}
+```

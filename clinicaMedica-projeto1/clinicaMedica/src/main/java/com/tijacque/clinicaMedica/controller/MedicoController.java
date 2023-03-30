@@ -1,5 +1,6 @@
 package com.tijacque.clinicaMedica.controller;
 
+import com.tijacque.clinicaMedica.medico.DadosAtualizaMedico;
 import com.tijacque.clinicaMedica.medico.DadosCadastroMedico;
 import com.tijacque.clinicaMedica.medico.DadosListagemMedico;
 import com.tijacque.clinicaMedica.model.Medico;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -55,4 +57,11 @@ public class MedicoController {
     /*public List<DadosCadastroMedico> dadosCadastroMedicos (){
         return List<>=medicoRepository.findAll();
     }*/
+
+    @PutMapping
+    @Transactional
+    public void atualizar(@RequestBody @Valid DadosAtualizaMedico dados){
+        var medico= medicoRepository.getReferenceById(dados.id());
+        medico.atualizarInformacoes(dados);
+    }
 }
