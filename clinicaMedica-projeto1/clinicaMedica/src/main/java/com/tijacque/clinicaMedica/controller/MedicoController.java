@@ -42,15 +42,25 @@ public class MedicoController {
     }
     @GetMapping
     public List<Medico> listarTodosDados(){
+
         return medicoRepository.findAll();
     }
 
-    @GetMapping("dados-medico")
+    @GetMapping("dados-medico-todos")
     public Page<DadosListagemMedico> listar(@PageableDefault(size = 5, sort = {"nome"}) Pageable paginacao){
         //o retorno faz um map para trazer os dados do DTO DadosListagemMedico
         //Aqui ajustamos o método para retornar um Page com a paginação
         //para o return a gente incluiu a paginação no medoto findAll e deixamos o metodo menor pq não é mais necessário converter para lista
         return medicoRepository.findAll(paginacao).map(DadosListagemMedico::new);
+        //
+    }
+
+    @GetMapping("dados-medico-ativos")
+    public Page<DadosListagemMedico> listarAtivos(@PageableDefault(size = 5, sort = {"nome"}) Pageable paginacao){
+        //o retorno faz um map para trazer os dados do DTO DadosListagemMedico
+        //Aqui ajustamos o método para retornar um Page com a paginação
+        //para o return a gente incluiu a paginação no medoto findAll e deixamos o metodo menor pq não é mais necessário converter para lista
+        return medicoRepository.findAllByAtivoTrue(paginacao).map(DadosListagemMedico::new);
         //
     }
 
@@ -63,5 +73,18 @@ public class MedicoController {
     public void atualizar(@RequestBody @Valid DadosAtualizaMedico dados){
         var medico= medicoRepository.getReferenceById(dados.id());
         medico.atualizarInformacoes(dados);
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public void excluir(@PathVariable Long id){
+        medicoRepository.deleteById(id);
+    }
+
+    @DeleteMapping("/inativar/{id}")
+    @Transactional
+    public void inativar(@PathVariable Long id){
+        var medico= medicoRepository.getReferenceById(id);
+        medico.inativar();
     }
 }

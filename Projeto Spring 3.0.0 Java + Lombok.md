@@ -808,3 +808,77 @@ public void atualizarInformacoes(DadosEndereco dados) {
     if(dados.cep != null) this.cep = dados.cep;
 }
 ```
+
+## Requisição de delete - inativar registro no banco
+
+Chegamos em um ponto onde o caminho a ser seguido pode ser dois, uma deleção real no banco de dados e a exclusão lógica que é muito praticada. Vamos entender as duas formas antes de colocar em prática.
+
+### Deletar diretamente no banco
+
+Para realizar a função apagando o dado no banco podemos usar um simples método, chamando a repository, vamos ver a seguir o código e entender.
+
+```
+@DeleteMapping("/{id}") //anotação para o verbo http responsável por deletar
+@Transactional 
+public void excluir(@PathVariable Long id){ //a anotação PathVariable da suporte a passar o id pela URL como variavel
+    medicoRepository.deleteById(id); //o metodo deleteById vem da JPA e da suporte a ação deletar pelo ID
+}
+```
+
+### Desativar apenas
+
+Essa segundo opção é um pouco mais segura já que não afeta o banco de dados de forma irreversível, os dados continuam ali porém inativados.
+
+Para isso vamos acrescentar a coluna que diz se o registro esta ativo ou inativo no banco de dados, em uma nova versão do 
+
+db.migration.
+
+arquivo V4__adicionar-campo-cad-ativo.sql
+
+```
+alter table tb_medicos add ativo tinyint;
+update tb_medicos set ativo =1;
+```
+
+> Atenção: para a alteração do banco ser realizada com sucesso, pare e inicie novamente o servidor.
+
+Vamos incluir esse atributo na model, atributo ativo do tipo boolean:
+
+```
+private Boolean ativo;
+```
+
+Agora vamos criar no model Medico, o método que realizar a ação de passar o valor false para o campo quando necessário:
+
+```
+public void inativar() {
+    this.ativo = false;
+}
+```
+
+Além disso, vamos garantir que o cadastro médico ao ser inserido no banco entre como true, essa alteração/método também ficará na model Medico, método construtor:
+
+```
+public Medico(DadosCadastroMedico dados){
+    this.ativo = true;
+    this.crm = dados.crm();
+    this.nome = dados.nome();
+    this.email = dados.email();
+    this.especialidade = dados.especialidade();
+    this.endereco = new DadosEndereco(dados.endereco());
+    this.telefone = dados.telefone();
+
+}
+```
+
+Agora na camada controller, vamos escrever o método que torna o registro false/inativo:
+
+```
+@DeleteMapping("/inativar/{id}") //mudei a rota para evitar ambiguidade 
+@Transactional
+public void inativar(@PathVariable Long id){
+    var medico= medicoRepository.getReferenceById(id); //defino o registro que deve ser afetado referenciando pelo ID
+    medico.inativar(); para o registro localizado, executamos o método inativar que esta na model Médico.
+}
+```
+

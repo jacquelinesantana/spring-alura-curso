@@ -7,10 +7,7 @@ import com.tijacque.clinicaMedica.repository.PacienteRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("paciente")
@@ -27,5 +24,12 @@ public class PacienteController {
     @Transactional
     public void cadastrarPac(@RequestBody @Valid DadosPaciente dadosPaciente){
         pacienteRepository.save(new Paciente(dadosPaciente));
+    }
+
+    @DeleteMapping("{id}")
+    @Transactional
+    public void deletar(@PathVariable Long id ){
+        pacienteRepository.deleteById(id);
+
     }
 }

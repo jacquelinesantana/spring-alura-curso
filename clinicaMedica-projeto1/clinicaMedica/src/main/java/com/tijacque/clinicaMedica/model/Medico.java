@@ -31,7 +31,11 @@ public class Medico {
     @Embedded //os campos no banco será na mesma table do medico e não uma table nova
     private DadosEndereco endereco;
 
+
+    private Boolean ativo;
+
     public Medico(DadosCadastroMedico dados){
+        this.ativo = true;
         this.crm = dados.crm();
         this.nome = dados.nome();
         this.email = dados.email();
@@ -45,5 +49,9 @@ public class Medico {
         if(dados.nome() != null)        this.nome = dados.nome();
         if(dados.telefone() != null)        this.telefone = dados.telefone();
         if(dados.endereco() != null)       this.endereco.atualizarInformacoes(dados.endereco());
+    }
+
+    public void inativar() {
+        this.ativo = false;
     }
 }
